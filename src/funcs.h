@@ -26,7 +26,6 @@
 
 void		set_cron_uid(void),
 		set_cron_cwd(void),
-		load_database(cron_db *),
 		open_logfile(void),
 		sigpipe_func(void),
 		job_add(entry *, user *),
@@ -41,6 +40,13 @@ void		set_cron_uid(void),
 		skip_comments(FILE *),
 		log_it(const char *, int, const char *, const char *),
 		log_close(void);
+#if defined WITH_INOTIFY
+	void load_inotify_database(cron_db *, int fd, int no),
+			set_cron_watched(int fd),
+	        set_cron_unwatched(int fd);
+#else
+	void load_database(cron_db *);
+#endif
 
 int		job_runqueue(void),
 		set_debug_flags(const char *),

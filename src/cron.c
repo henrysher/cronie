@@ -62,6 +62,13 @@ main(int argc, char *argv[]) {
 	int fd;
 	char *cs;
 
+#if defined WITH_INOTIFY
+	int fildes;
+	fildes = inotify_init();
+	if (fildes < 0)
+        perror ("inotify_init");
+#endif
+
 	ProgramName = argv[0];
 
 	setlocale(LC_ALL, "");
@@ -90,6 +97,9 @@ main(int argc, char *argv[]) {
 
 	acquire_daemonlock(0);
 	set_cron_uid();
+#if defined WITH_INOTIFY
+	set_cron_watched(fildes);
+#endif
 	set_cron_cwd();
 
 	if (putenv("PATH="_PATH_DEFPATH) < 0) {
@@ -143,12 +153,15 @@ main(int argc, char *argv[]) {
 	acquire_daemonlock(0);
 	database.head = NULL;
 	database.tail = NULL;
+#if defined WITH_INOTIFY
+    load_inotify_database(&database, fildes, 1);
+#else
 	database.mtime = (time_t) 0;
 	load_database(&database);
+#endif
 	set_time(TRUE);
 	run_reboot_jobs(&database);
 	timeRunning = virtualTime = clockTime;
-
 	/*
 	 * Too many clocks, not enough time (Al. Einstein)
 	 * These clocks are in minutes since the epoch, adjusted for timezone.
@@ -175,8 +188,11 @@ main(int argc, char *argv[]) {
 		 * clock.  Classify the change into one of 4 cases.
 		 */
 		timeDiff = timeRunning - virtualTime;
-		
+#if defined WITH_INOTIFY
+		load_inotify_database(&database, fildes, 2);
+#else
 		load_database(&database);
+#endif
 		/* shortcut for the most common case */
 		if (timeDiff == 1) {
 			virtualTime = timeRunning;
@@ -205,8 +221,7 @@ main(int argc, char *argv[]) {
 					if (job_runqueue())
 						sleep(10);
 					virtualTime++;
-					find_jobs(virtualTime, &database,
-					    TRUE, TRUE);
+					find_jobs(virtualTime, &database, TRUE, TRUE);
 				} while (virtualTime < timeRunning);
 				break;
 
@@ -270,7 +285,9 @@ main(int argc, char *argv[]) {
 		/* Check to see if we received a signal while running jobs. */
 		if (got_sighup) {
 			got_sighup = 0;
+#if !defined WITH_INOTIFY
 			database.mtime = (time_t) 0;
+#endif
 			log_close();
 		}
 		if (got_sigchld) {
@@ -278,6 +295,14 @@ main(int argc, char *argv[]) {
 			sigchld_reaper();
 		}
 	}
+#if defined WITH_INOTIFY
+	set_cron_unwatched(fildes);
+
+	int ret;
+	ret = close(fildes);
+	if (ret)
+       perror ("close");
+#endif
 }
 
 static void
@@ -327,7 +352,7 @@ find_jobs(int vtime, cron_db *db, int doWild, int doNonWild) {
 	Debug(DSCH, ("[%ld] tick(%d,%d,%d,%d,%d) %s %s\n",
 		     (long)getpid(), minute, hour, dom, month, dow,
 		     doWild?" ":"No wildcard",doNonWild?" ":"Wildcard only"))
-
+	//syslog(LOG_INFO, "[%ld] tick(%d,%d,%d,%d,%d)",(long)getpid(), minute, hour, dom, month, dow);
 	/* the dom/dow situation is odd.  '* * 1,15 * Sun' will run on the
 	 * first and fifteenth AND every Sunday;  '* * * * Sun' will run *only*
 	 * on Sundays;  '* * 1,15 * *' will run *only* the 1st and 15th.  this
@@ -339,9 +364,9 @@ find_jobs(int vtime, cron_db *db, int doWild, int doNonWild) {
 			Debug(DSCH|DEXT, ("user [%s:%ld:%ld:...] cmd=\"%s\"\n",
 			    e->pwd->pw_name, (long)e->pwd->pw_uid,
 			    (long)e->pwd->pw_gid, e->cmd))
-
 			job_tz = env_get("CRON_TZ", e->envp);
 			maketime(job_tz, orig_tz);
+			// here we test whether time is NOW
 			if (bit_test(e->minute, minute) &&
 			    bit_test(e->hour, hour) &&
 			    bit_test(e->month, month) &&
@@ -353,7 +378,7 @@ find_jobs(int vtime, cron_db *db, int doWild, int doNonWild) {
 				if ((doNonWild &&
 				    !(e->flags & (MIN_STAR|HR_STAR))) || 
 				    (doWild && (e->flags & (MIN_STAR|HR_STAR))))
-					job_add(e, u);
+					job_add(e, u);	//will add job, if it isn't in queue already for NOW.
 			}
 		}
 	}
@@ -409,7 +434,9 @@ cron_sleep(int target, cron_db *db) {
 		 */
 		if (got_sighup) {
 			got_sighup = 0;
+#if !defined WITH_INOTIFY
 			db->mtime = (time_t) 0;
+#endif
 			log_close();
 		}
 		if (got_sigchld) {

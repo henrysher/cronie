@@ -47,7 +47,8 @@ AC_CHECK_HEADERS( \
         selinux/selinux.h \
         stddef.h \
         stdint.h \
-		sys/audit.h \
+        sys/audit.h \
+        sys/inotify.h \
         sys/stat.h \
         sys/stream.h \
         sys/stropts.h \
@@ -136,6 +137,20 @@ AC_ARG_WITH(daemon_groupname,
 )
 AC_SUBST(DAEMON_GROUPNAME)
 
+# Check whether inotify is accepted
+AC_ARG_WITH(inotify,
+	[	--with-inotify	Enable inotify support],
+	[ if test "x$withval" != "xno" ; then
+		saved_LIBS="$LIBS"
+		AC_DEFINE(WITH_INOTIFY,1,[Define if you want inotify support.])
+		AC_CHECK_HEADER([sys/inotify.h], , AC_MSG_ERROR(Inotify support requires sys/inotify.h header))
+		AC_CHECK_FUNCS(inotify_init inotify_add_watch)
+		LIBS="$saved_LIBS $LIBINOTIFY"
+		AC_SUBST(LIBINOTIFY)
+	  fi
+	]
+)
+
 # Check whether user wants SELinux support
 SELINUX_MSG="no"
 LIBSELINUX=""
@@ -202,6 +217,8 @@ AC_DEFINE(MAILFMT,"%s -FCronDaemon -i -odi -oem -oi -t",
 -oi   = Ignore "." alone on a line
 -t    = Get recipient from headers
 -d = undocumented but common flag.])
+
+AC_DEFINE(MAIL_DATE,0,[Date is set by sendmail.])
 
 AC_DEFINE(SYSLOG,1,[Using syslog for log messages.])
 
