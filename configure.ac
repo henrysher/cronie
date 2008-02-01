@@ -23,7 +23,8 @@ AC_CHECK_HEADERS( \
         selinux/selinux.h \
         stddef.h \
         stdint.h \
-		sys/audit.h \
+        sys/audit.h \
+        sys/inotify.h \
         sys/stat.h \
         sys/stream.h \
         sys/stropts.h \
@@ -129,7 +130,21 @@ AC_SUBST(DAEMON_GROUPNAME)
 #    		AC_SUBST(initdir)
 #	fi ]
 #)
-                                                        
+
+# Check whether inotify is accepted
+AC_ARG_WITH(inotify,
+   [AS_HELP_STRING([--with-inotify], [ Enable inotify support])],
+   [ if test "x$withval" != "xno" ; then
+       saved_LIBS="$LIBS"
+       AC_DEFINE(WITH_INOTIFY,1,[Define if you want inotify support.])
+       AC_CHECK_HEADER([sys/inotify.h], , AC_MSG_ERROR(Inotify support requires sys/inotify.h header))
+       AC_CHECK_FUNCS(inotify_init inotify_add_watch)
+       LIBS="$saved_LIBS $LIBINOTIFY"
+       AC_SUBST(LIBINOTIFY)
+     fi
+   ]
+)
+                                                    
 # Check whether user wants SELinux support
 SELINUX_MSG="no"
 LIBSELINUX=""

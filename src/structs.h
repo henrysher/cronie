@@ -51,15 +51,19 @@ typedef	struct _entry {
 typedef	struct _user {
 	struct _user	*next, *prev;	/* links */
 	char		*name;
-        char            *tabname;       /* /etc/cron.d/ file name or NULL */
+	char		*tabname;       /* /etc/cron.d/ file name or NULL */
+#if !defined WITH_INOTIFY
 	time_t		mtime;		/* last modtime of crontab */
+#endif
 	entry		*crontab;	/* this person's crontab */
-        security_context_t scontext;    /* SELinux security context */
+	security_context_t	scontext;    /* SELinux security context */
 } user;
 
 typedef	struct _cron_db {
 	user		*head, *tail;	/* links */
+#if !defined WITH_INOTIFY
 	time_t		mtime;		/* last modtime on spooldir */
+#endif
 } cron_db;
 				/* in the C tradition, we only create
 				 * variables for the main program, just

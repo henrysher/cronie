@@ -206,6 +206,60 @@ set_cron_uid(void) {
 #endif
 }
 
+#if defined WITH_INOTIFY
+int wd1, wd2, wd3, wd4;
+
+void
+set_cron_watched(int fd) {
+	int ret1, ret2, ret3;
+
+	wd1 = inotify_add_watch(fd, CRONDIR, IN_MODIFY | IN_DELETE | IN_CREATE);
+	if (wd1 < 0) {
+		perror ("inotify_add_watch1");
+		log_it("CRON",getpid(),"This directory can't be watched",strerror(errno));
+	}
+	
+	wd2 = inotify_add_watch(fd, RH_CROND_DIR, IN_MODIFY | IN_DELETE | IN_CREATE);
+	if (wd2 < 0) {
+		perror ("inotify_add_watch1");
+		log_it("CRON",getpid(),"This directory can't be watched",strerror(errno));
+	}
+
+	wd3 = inotify_add_watch(fd, SYSCRONTAB, IN_MODIFY | IN_DELETE | IN_CREATE);
+	if (wd3 < 0) {
+		perror("inotify_add_watch3");
+		log_it("CRON",getpid(),"This file can't be watched ",strerror(errno));
+	}
+
+	wd4 = inotify_add_watch(fd, "/var/spool/cron/", IN_MODIFY | IN_DELETE | IN_CREATE);
+	if (wd4 < 0) {
+		perror("inotify_add_watch4");
+		log_it("CRON",getpid(),"This file can't be watched ",strerror(errno));
+	}
+}
+
+void
+set_cron_unwatched(int fd) {
+	int ret1, ret2, ret3, ret4;
+
+	ret1 = inotify_rm_watch(fd, wd1);
+	if (ret1)
+		perror ("inotify_rm_watch1");
+
+	ret2 = inotify_rm_watch(fd, wd2);
+	if (ret2)
+		perror ("inotify_rm_watch2");
+
+	ret3 = inotify_rm_watch(fd, wd3);
+	if (ret3)
+		perror ("inotify_rm_watch3");
+	
+	ret4 = inotify_rm_watch(fd, wd4);
+	if (ret4)
+		perror ("inotify_rm_watch4");
+}
+#endif
+
 void
 set_cron_cwd(void) {
 	struct stat sb;
