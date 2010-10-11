@@ -149,7 +149,8 @@ static void usage(void) {
 		ProgramName);
 	for (dflags = DebugFlagNames; *dflags; dflags++)
 		fprintf(stderr, "%s%s", *dflags, dflags[1] ? "," : "]");
-	fprintf(stderr, "] print debug information\n");
+	fprintf(stderr, "] print debug information\n \
+		[-h] print help \n");
 	exit(ERROR_EXIT);
 }
 

@@ -46,15 +46,15 @@ enum opt_t {opt_unknown, opt_list, opt_delete, opt_edit, opt_replace, opt_hostse
 static char *Options[] = {"???", "list", "delete", "edit", "replace", "hostset", "hostget"};
 
 # ifdef WITH_SELINUX
-static char *getoptargs = "u:lerisncx:";
+static char *getoptargs = "u:lerisncxh:";
 # else
-static char *getoptargs = "u:lerincx:";
+static char *getoptargs = "u:lerincxh:";
 # endif
 #else
 # ifdef WITH_SELINUX
-static char *getoptargs = "u:lerisnc";
+static char *getoptargs = "u:lerisnch";
 # else
-static char *getoptargs = "u:lerinc";
+static char *getoptargs = "u:lerinch";
 # endif
 #endif
 static char *selinux_context = 0;
@@ -94,6 +94,7 @@ static void usage(const char *msg) {
 #ifdef WITH_SELINUX
 	fprintf(stderr, "\t-s\t(selinux context)\n");
 #endif
+	fprintf(stderr, "\t-h\t(print help)\n");
 	exit(ERROR_EXIT);
 }
 
@@ -273,6 +274,7 @@ static void parse_args(int argc, char *argv[]) {
 			}
 			Option = opt_hostget;
 			break;
+		case 'h':
 		default:
 			usage("unrecognized option");
 		}
