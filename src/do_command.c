@@ -63,6 +63,10 @@ static void child_process(entry * e, user * u) {
 	char **jobenv = 0L;
 	pid_t pid = getpid();
 	pid_t jobpid;
+	char *cron_be_ionice = NULL;
+	char *cron_be_nice = NULL;
+	char *cron_io_class = NULL;
+	char *cron_io_priority = NULL;
 
 	/* Set up the Red Hat security context for both mail/minder and job processes:
 	 */
@@ -89,6 +93,11 @@ static void child_process(entry * e, user * u) {
 	usernm = e->pwd->pw_name;
 	mailto = env_get("MAILTO", jobenv);
 	mailfrom = env_get("MAILFROM", e->envp);
+	if ((cron_io_class = env_get("CRON_IO_CLASS", e->envp)) != 0 || (cron_io_priority = env_get("CRON_IO_PRIORITY", e->envp)) !=0) {
+		cron_be_ionice = "ionice";
+	}
+	if (env_get("CRON_NICE", e->envp))
+		cron_be_nice = "nice";
 
 	/* our parent is watching for our death by catching SIGCHLD.  we
 	 * do not care to watch for our children's deaths this way -- we
@@ -222,7 +231,12 @@ static void child_process(entry * e, user * u) {
 				_exit(OK_EXIT);
 			}
 #endif		 /*DEBUGGING*/
-				execle(shell, shell, "-c", e->cmd, (char *) 0, jobenv);
+			execle(shell, shell, "-c", cron_be_nice, 
+				env_get("CRON_NICE", e->envp), 
+				cron_be_ionice, cron_io_class, cron_io_priority, 
+				e->cmd, (char *) 0, jobenv
+			);
+			log_it("CRON", getpid(), cron_be_ionice, cron_be_nice, 0);
 			fprintf(stderr, "execl: couldn't exec `%s'\n", shell);
 			perror("execl");
 			_exit(ERROR_EXIT);

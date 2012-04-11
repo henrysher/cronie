@@ -83,6 +83,9 @@ entry *load_entry(FILE * file, void (*error_func) (), struct passwd *pw,
 	char cmd[MAX_COMMAND];
 	char envstr[MAX_ENVSTR];
 	char **tenvp;
+	char cron_io_class[1];
+	char cron_io_priority[1];
+	char cron_nice[2];
 
 	Debug(DPARS, ("load_entry()...about to eat comments\n"))
 
@@ -346,6 +349,29 @@ entry *load_entry(FILE * file, void (*error_func) (), struct passwd *pw,
 	else
 		log_it("CRON", getpid(), "ERROR", "can't set USER", 0);
 #endif
+	if (glue_strings(envstr, sizeof envstr, "CRON_IO_CLASS", cron_io_class, '=')) {
+		if ((tenvp = env_set(e->envp, envstr)) == NULL) {
+		ecode = e_memory;
+		goto eof;
+		}
+		e->envp = tenvp;
+	}
+
+	if (glue_strings(envstr, sizeof envstr, "CRON_IO_PRIORITY", cron_io_priority, '=')) {
+		if ((tenvp = env_set(e->envp, envstr)) == NULL) {
+			ecode = e_memory;
+			goto eof;
+		}
+		e->envp = tenvp;
+	}
+
+	if (glue_strings(envstr, sizeof envstr, "CRON_NICE", cron_nice, '=')) {
+		if ((tenvp = env_set(e->envp, envstr)) == NULL) {
+			ecode = e_memory;
+			goto eof;
+		}
+	e->envp = tenvp;
+	}
 
 	Debug(DPARS, ("load_entry()...about to parse command\n"))
 
