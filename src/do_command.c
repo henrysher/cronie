@@ -402,7 +402,7 @@ static void child_process(entry * e, user * u) {
 
 			/* Also skip it if MailCmd is set to "off" */
 			if (mailto && safe_p(usernm, mailto)
-			           && strncmp(MailCmd,"off",4)) {
+				&& strncmp(MailCmd,"off",4) && !SyslogOutput) {
 				char **env;
 				char mailcmd[MAX_COMMAND];
 				char hostname[MAXHOSTNAMELEN];
@@ -531,7 +531,7 @@ static void child_process(entry * e, user * u) {
 			 * log the facts so the poor user can figure out
 			 * what's going on.
 			 */
-			if (mail && status) {
+			if (mail && status && !SyslogOutput) {
 				char buf[MAX_TEMPSTR];
 
 				sprintf(buf,
