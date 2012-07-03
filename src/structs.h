@@ -35,6 +35,10 @@ typedef	struct _entry {
 #define	DOM_STAR	0x04
 #define	DOW_STAR	0x08
 #define	WHEN_REBOOT	0x10
+#define	MIN_RANDOM	0x12
+#define	HOUR_RANDOM	0x14
+#define	DOM_RANDOM	0x16
+#define	DOW_RANDOM	0x18
 #define	DONT_LOG	0x20
 } entry;
 

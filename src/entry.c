@@ -438,7 +438,7 @@ get_range(bitstr_t * bits, int low, int high, const char *names[],
 	/* range = number | number "-" number [ "/" number ]
 	 */
 
-	int i, num1, num2, num3;
+	int i, num1, num2, num3, ran;
 
 	Debug(DPARS | DEXT, ("get_range()...entering, exit won't show\n"))
 
@@ -514,6 +514,19 @@ get_range(bitstr_t * bits, int low, int high, const char *names[],
 			unget_char(ch, file);
 			return (EOF);
 		}
+
+	/* randomize whatever by number after the ~ */
+	if (ch == '~') {
+		ch = get_char(file);
+		if (ch == EOF)
+			return (EOF);
+
+		ch = get_number(&ran, low, names, ch, file, "/, \t\n");
+	}
+	else {
+		/* no randomization */
+		ran = 0;
+	}
 
 	return (ch);
 }
