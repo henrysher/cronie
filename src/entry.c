@@ -452,9 +452,21 @@ get_range(bitstr_t * bits, int low, int high, const char *names[],
 			return (EOF);
 	}
 	else {
-		ch = get_number(&num1, low, names, ch, file, ",- \t\n");
+		ch = get_number(&num1, low, names, ch, file, "~,- \t\n");
 		if (ch == EOF)
 			return (EOF);
+
+		/* randomize whatever by number after the ~ */
+		if (ch == '~') {
+			ch = get_char(file);
+			if (ch == EOF)
+				return (EOF);
+			ch = get_number(&ran, low, names, ch, file, " \t\n");
+		}
+		else {
+		/* no randomization */
+			ran = 0;
+		}
 
 		if (ch != '-') {
 			/* not a range, it's a single number.
@@ -514,19 +526,6 @@ get_range(bitstr_t * bits, int low, int high, const char *names[],
 			unget_char(ch, file);
 			return (EOF);
 		}
-
-	/* randomize whatever by number after the ~ */
-	if (ch == '~') {
-		ch = get_char(file);
-		if (ch == EOF)
-			return (EOF);
-
-		ch = get_number(&ran, low, names, ch, file, "/, \t\n");
-	}
-	else {
-		/* no randomization */
-		ran = 0;
-	}
 
 	return (ch);
 }
