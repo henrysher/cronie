@@ -489,6 +489,12 @@ get_range(bitstr_t * bits, int low, int high, const char *names[],
 			ch = get_number(&num2, low, names, ch, file, "/, \t\n");
 			if (ch == EOF || num1 > num2)
 				return (EOF);
+			if (ch == '~') {
+				ch = get_char(file);
+				if (ch == EOF)
+                                	return (EOF);
+                        	ch = get_number(&ran, low, names, ch, file, " \t\n");
+			}
 		}
 	}
 
